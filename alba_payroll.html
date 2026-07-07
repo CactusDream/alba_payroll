@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>알바 급여 관리</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#F1F5F9;color:#0F172A;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:16px 16px 80px}
+
+/* 헤더 */
+.hd-eye{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:4px}
+.hd-title{font-size:26px;font-weight:900;color:#0F172A}
+
+/* 탭 */
+.tabs{display:flex;background:#E2E8F0;border-radius:14px;padding:4px;margin:18px 0 20px}
+.tab{flex:1;border:none;cursor:pointer;padding:11px 8px;border-radius:10px;font-size:13px;font-weight:700;transition:all .15s;background:transparent;color:#64748B}
+.tab.on{background:#fff;color:#1E40AF;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* 카드 */
+.card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:14px}
+
+/* 버튼 */
+.btn-p{background:#2563EB;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-s{background:#fff;color:#64748B;border:1.5px solid #E2E8F0;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-d{background:#FEE2E2;color:#B91C1C;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.link-btn{background:none;border:none;font-size:13px;font-weight:700;cursor:pointer;padding:0}
+
+/* 폼 */
+.lbl{font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:6px}
+.inp{width:100%;border:1.5px solid #E2E8F0;border-radius:10px;padding:11px 13px;font-size:14px;outline:none;background:#F8FAFC;color:#0F172A;font-family:inherit}
+.inp:focus{border-color:#2563EB;background:#fff}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* 직원 카드 */
+.emp-card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:10px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;margin-right:3px}
+.pill.on{background:#DBEAFE;color:#2563EB}
+.pill.off{background:#F1F5F9;color:#CBD5E1}
+
+/* 캘린더 */
+.cal-hd{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.cal-hd-cell{text-align:center;font-size:11px;font-weight:700;padding:3px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;border:none;border-radius:9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;transition:all .1s;background:#F8FAFC}
+.cal-cell:active{transform:scale(.9)}
+.cal-sched{outline:2px solid #BFDBFE;outline-offset:-1px;background:#EFF6FF}
+.cal-worked{background:#2563EB!important;outline:none!important}
+.cal-hol{background:#FEF2F2}
+.cal-day{font-size:12px;font-weight:700;line-height:1}
+.cal-h{font-size:9px;font-weight:700;margin-top:2px;line-height:1;color:rgba(255,255,255,.85)}
+.cal-hname{font-size:6px;line-height:1;margin-top:1px}
+
+/* 급여 결과 */
+.pay-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #F1F5F9}
+.pay-lbl{font-size:13px;color:#64748B}
+.pay-val{font-size:13px;font-weight:700}
+.pay-total{background:linear-gradient(135deg,#1E40AF,#2563EB);border-radius:14px;padding:20px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.pt-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1em;text-transform:uppercase}
+.pt-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.pt-amt{font-size:28px;font-weight:900;color:#fff}
+
+/* 주차 상세 */
+.wk-row{background:#F8FAFC;border-radius:10px;padding:11px 12px;margin-bottom:6px}
+.wk-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.wk-lbl{font-size:12px;font-weight:700;color:#334155}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+.bg-g{background:#D1FAE5;color:#065F46}
+.bg-r{background:#FEE2E2;color:#991B1B}
+.bg-y{background:#FEF3C7;color:#92400E}
+.bg-gr{background:#F1F5F9;color:#94A3B8}
+.wk-txt{font-size:11px;color:#94A3B8}
+
+/* 모달 */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:200}
+.modal-box{background:#fff;border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-ttl{font-size:18px;font-weight:800;color:#0F172A}
+.modal-close{background:none;border:none;font-size:22px;color:#94A3B8;cursor:pointer;line-height:1}
+
+/* 요일 선택 버튼 */
+.day-btns{display:flex;gap:5px;margin-top:8px}
+.day-b{flex:1;border:none;border-radius:10px;padding:12px 0;font-size:13px;font-weight:800;cursor:pointer;transition:all .1s}
+.day-b.on{background:#2563EB;color:#fff}
+.day-b.off{background:#F1F5F9;color:#94A3B8}
+
+/* 보조 버튼들 */
+.autofill-btn{width:100%;background:#EFF6FF;border:none;border-radius:10px;padding:10px;margin-top:10px;font-size:12px;color:#2563EB;cursor:pointer;font-weight:700}
+.reset-btn{width:100%;background:none;border:1.5px solid #E2E8F0;border-radius:10px;padding:8px;font-size:12px;color:#94A3B8;cursor:pointer;font-weight:600;margin-top:6px}
+.detail-btn{width:100%;background:none;border:1.5px solid #E2E8F0;border-radius:10px;padding:9px;margin-top:12px;font-size:12px;color:#94A3B8;cursor:pointer;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+
+/* 빈 상태 */
+.empty{text-align:center;padding:48px 24px}
+.empty-ico{font-size:40px;margin-bottom:10px}
+.empty-ttl{font-size:15px;font-weight:700;color:#64748B;margin-bottom:4px}
+.empty-sub{font-size:13px;color:#94A3B8}
+
+/* 그리드 */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.rb{display:flex;justify-content:space-between;align-items:center}
+
+/* 날짜 팝업 특별 스타일 */
+.day-modal-date{font-size:20px;font-weight:900;color:#0F172A;margin-bottom:2px}
+.day-modal-sub{font-size:13px;color:#94A3B8;margin-bottom:18px;min-height:18px}
+.hours-input{width:100%;border:2px solid #E2E8F0;border-radius:12px;padding:14px;font-size:24px;font-weight:900;text-align:center;outline:none;background:#F8FAFC;color:#0F172A;font-family:inherit}
+.hours-input:focus{border-color:#2563EB;background:#fff}
+.hours-note{font-size:11px;color:#94A3B8;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="mroot"></div>
+
+<script>
+'use strict';
+
+// ── 공휴일 (2024~2026) ─────────────────────
+const HOL = {
+  "2024-01-01":"신정","2024-02-09":"설날연휴","2024-02-10":"설날","2024-02-11":"설날연휴",
+  "2024-02-12":"대체공휴일","2024-03-01":"삼일절","2024-05-05":"어린이날","2024-05-06":"대체공휴일",
+  "2024-05-15":"부처님오신날","2024-06-06":"현충일","2024-08-15":"광복절",
+  "2024-09-16":"추석연휴","2024-09-17":"추석","2024-09-18":"추석연휴",
+  "2024-10-03":"개천절","2024-10-09":"한글날","2024-12-25":"크리스마스",
+  "2025-01-01":"신정","2025-01-28":"설날연휴","2025-01-29":"설날","2025-01-30":"설날연휴",
+  "2025-03-01":"삼일절","2025-05-05":"어린이날","2025-05-06":"대체공휴일",
+  "2025-05-15":"부처님오신날","2025-06-06":"현충일","2025-08-15":"광복절",
+  "2025-10-03":"개천절","2025-10-05":"추석연휴","2025-10-06":"추석",
+  "2025-10-07":"추석연휴","2025-10-08":"대체공휴일","2025-10-09":"한글날","2025-12-25":"크리스마스",
+  "2026-01-01":"신정","2026-02-16":"설날연휴","2026-02-17":"설날","2026-02-18":"설날연휴",
+  "2026-03-01":"삼일절","2026-05-05":"어린이날","2026-05-24":"부처님오신날",
+  "2026-06-06":"현충일","2026-08-15":"광복절",
+  "2026-09-24":"추석연휴","2026-09-25":"추석","2026-09-26":"추석연휴",
+  "2026-10-03":"개천절","2026-10-09":"한글날","2026-12-25":"크리스마스",
+};
+
+const DKEYS = ['sun','mon','tue','wed','thu','fri','sat'];
+const DKO   = ['일','월','화','수','목','금','토'];
+
+// ── 앱 상태 ────────────────────────────────
+let emps    = JSON.parse(localStorage.getItem('alba_emps')    || '[]');
+let recs    = JSON.parse(localStorage.getItem('alba_recs')    || '{}');
+// recs 구조: { "empId_year_month": { "2026-07-01": 7.5 } }  ← 값은 실근무시간(h)
+
+let tab     = 'employees';
+let ps      = { eid:'', y: new Date().getFullYear(), m: new Date().getMonth()+1 };
+let modal   = null;
+let showWk  = false;
+
+function save() {
+  localStorage.setItem('alba_emps', JSON.stringify(emps));
+  localStorage.setItem('alba_recs',  JSON.stringify(recs));
+}
+
+// ── 유틸 ───────────────────────────────────
+function ds(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+function won(n) { return Math.round(n).toLocaleString('ko-KR')+'원'; }
+function uid()  { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+function getWeeks(y, m) {
+  const first = new Date(y, m-1, 1);
+  const last  = new Date(y, m, 0);
+  const back  = first.getDay() === 0 ? 6 : first.getDay()-1;
+  const cur   = new Date(first);
+  cur.setDate(cur.getDate()-back);
+  const wks = [];
+  while (cur <= last) {
+    wks.push(Array.from({length:7}, (_,i) => { const d=new Date(cur); d.setDate(cur.getDate()+i); return d; }));
+    cur.setDate(cur.getDate()+7);
+  }
+  return wks;
+}
+
+function calcPay(emp, rec, y, m) {
+  const defH  = emp.workHours - emp.breakMinutes/60;
+  const schK  = DKEYS.filter(k => emp.schedule[k]);
+  const wkCon = defH * schK.length;   // 주 소정근로시간
+  const wks   = getWeeks(y, m);
+
+  let basic=0, holiday=0;
+  const dets = [];
+
+  wks.forEach((wk, wi) => {
+    const inM      = wk.filter(d => d.getMonth()+1===m && d.getFullYear()===y);
+    let wkBasic = 0;
+    inM.forEach(d => { const h=rec[ds(d)]||0; if(h>0) wkBasic += h*emp.hourlyWage; });
+    basic += wkBasic;
+
+    let wkHol=0, ok=false, reason='';
+    if (wkCon >= 15) {
+      const schInM  = inM.filter(d => emp.schedule[DKEYS[d.getDay()]]);
+      const allWrkd = schInM.length>0 && schInM.every(d => (rec[ds(d)]||0)>0);
+      if (allWrkd) {
+        wkHol = (Math.min(wkCon,40)/40)*8*emp.hourlyWage;
+        const sun   = wk[6];
+        const sunHr = sun.getMonth()+1===m && sun.getFullYear()===y;
+        if (sunHr || inM.length>=4) { ok=true; holiday+=wkHol; reason='발생'; }
+        else reason='다음달 귀속';
+      } else {
+        reason = schInM.length===0 ? '이번달 근무없음' : '결근';
+      }
+    } else reason='주15시간 미만';
+
+    const workedInM   = inM.filter(d=>(rec[ds(d)]||0)>0);
+    const schedInM    = inM.filter(d=>emp.schedule[DKEYS[d.getDay()]]);
+    const workedHours = workedInM.reduce((s,d)=>s+(rec[ds(d)]||0),0);
+    const s0=`${wk[0].getMonth()+1}/${wk[0].getDate()}`;
+    const s1=`${wk[6].getMonth()+1}/${wk[6].getDate()}`;
+    dets.push({label:`${wi+1}주차 (${s0}~${s1})`,wc:workedInM.length,sc:schedInM.length,workedHours,wkBasic,wkHol:ok?wkHol:0,ok,reason});
+  });
+
+  const totWrk = Object.values(rec).filter(h=>h>0).length;
+  const totH   = Object.values(rec).reduce((s,h)=>s+(h||0),0);
+  const gross  = basic+holiday;
+  const tax    = gross*0.033;
+  return { totWrk, totH, basic, holiday, gross, tax, net:gross-tax, wkCon, dets };
+}
+
+// ── 렌더 ───────────────────────────────────
+function render() {
+  const emp = emps.find(e=>e.id===ps.eid);
+  const rk  = `${ps.eid}_${ps.y}_${ps.m}`;
+  const rec = ps.eid ? (recs[rk]||{}) : {};
+  const res = emp ? calcPay(emp, rec, ps.y, ps.m) : null;
+
+  document.getElementById('app').innerHTML = buildMain(emp, rec, res);
+  document.getElementById('mroot').innerHTML = modal ? buildModal(emp, rec, rk) : '';
+
+  // select 리스너
+  const se = document.getElementById('se'); if(se) se.onchange=e=>{ps.eid=e.target.value;showWk=false;render();};
+  const sy = document.getElementById('sy'); if(sy) sy.onchange=e=>{ps.y=+e.target.value;showWk=false;render();};
+  const sm = document.getElementById('sm'); if(sm) sm.onchange=e=>{ps.m=+e.target.value;showWk=false;render();};
+}
+
+function buildMain(emp, rec, res) {
+  return `
+    <div style="padding:20px 4px 16px">
+      <div class="hd-eye">알바 관리 시스템</div>
+      <div class="hd-title">급여 계산기</div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${tab==='employees'?'on':''}" onclick="ST('employees')">👤 직원 관리</button>
+      <button class="tab ${tab==='payroll'?'on':''}" onclick="ST('payroll')">💰 급여 계산</button>
+    </div>
+    ${tab==='employees' ? buildEmpTab() : buildPayTab(emp, rec, res)}
+  `;
+}
+
+// ── 직원 탭 ────────────────────────────────
+function buildEmpTab() {
+  const header = `
+    <div class="rb" style="margin-bottom:12px">
+      <span style="font-size:13px;color:#94A3B8;font-weight:600">총 ${emps.length}명</span>
+      <button class="btn-p" onclick="OA()">+ 직원 추가</button>
+    </div>`;
+  if (!emps.length) return header+`
+    <div class="card"><div class="empty">
+      <div class="empty-ico">👤</div>
+      <div class="empty-ttl">등록된 직원이 없어요</div>
+      <div class="empty-sub">직원 추가를 눌러 시작하세요</div>
+    </div></div>`;
+
+  return header + emps.map(e => {
+    const net = e.workHours - e.breakMinutes/60;
+    const sd  = DKEYS.filter(k=>e.schedule[k]).length;
+    const pills = DKEYS.map((k,i)=>`<span class="pill ${e.schedule[k]?'on':'off'}">${DKO[i]}</span>`).join('');
+    return `<div class="emp-card">
+      <div class="rb">
+        <div>
+          <div style="font-size:16px;font-weight:800;margin-bottom:4px">${e.name}
+            <span class="pill on" style="font-size:11px;margin-left:6px">주 ${sd}일</span>
+          </div>
+          <div style="font-size:13px;color:#64748B;margin-bottom:8px">
+            시급 ${e.hourlyWage.toLocaleString()}원 &middot; 실근무 ${net}h/일 &middot; 휴게 ${e.breakMinutes}분
+          </div>
+          <div>${pills}</div>
+        </div>
+        <div style="display:flex;gap:12px;margin-left:8px">
+          <button class="link-btn" style="color:#2563EB" onclick="OE('${e.id}')">수정</button>
+          <button class="link-btn" style="color:#EF4444" onclick="DE('${e.id}')">삭제</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 급여 탭 ────────────────────────────────
+function buildPayTab(emp, rec, res) {
+  const yOpts = [2024,2025,2026].map(y=>`<option value="${y}" ${y===ps.y?'selected':''}>${y}년</option>`).join('');
+  const mOpts = Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===ps.m?'selected':''}>${m}월</option>`).join('');
+  const eOpts = emps.map(e=>`<option value="${e.id}" ${e.id===ps.eid?'selected':''}>${e.name}</option>`).join('');
+
+  const controls = `
+    <div class="card">
+      <label class="lbl">직원</label>
+      <select class="inp" id="se" style="margin-bottom:12px">
+        <option value="">-- 직원을 선택하세요 --</option>${eOpts}
+      </select>
+      <div class="g2">
+        <div><label class="lbl">연도</label><select class="inp" id="sy">${yOpts}</select></div>
+        <div><label class="lbl">월</label><select class="inp" id="sm">${mOpts}</select></div>
+      </div>
+    </div>`;
+
+  if (!emp) return controls+`
+    <div class="card"><div class="empty">
+      <div class="empty-ico">💰</div>
+      <div class="empty-ttl">직원을 먼저 선택해주세요</div>
+    </div></div>`;
+
+  return controls + buildCalendar(emp, rec) + (res ? buildResult(res) : '');
+}
+
+// ── 캘린더 ─────────────────────────────────
+function buildCalendar(emp, rec) {
+  const dim    = new Date(ps.y, ps.m, 0).getDate();
+  const fdow   = new Date(ps.y, ps.m-1, 1).getDay();
+  const defH   = emp.workHours - emp.breakMinutes/60;
+
+  const hdCells = DKO.map((d,i)=>
+    `<div class="cal-hd-cell" style="color:${i===0?'#EF4444':i===6?'#3B82F6':'#94A3B8'}">${d}</div>`
+  ).join('');
+
+  const emptyCells = Array(fdow).fill('<div></div>').join('');
+
+  const days = Array.from({length:dim},(_,i)=>{
+    const day  = i+1;
+    const date = new Date(ps.y, ps.m-1, day);
+    const dstr = ds(date);
+    const dow  = date.getDay();
+    const isH  = !!HOL[dstr];
+    const isSu = dow===0, isSa = dow===6;
+    const isSc = !!emp.schedule[DKEYS[dow]];
+    const hrs  = rec[dstr]||0;
+    const isW  = hrs>0;
+
+    let cellCls = 'cal-cell';
+    if (isW)       cellCls += ' cal-worked';
+    else if (isH)  cellCls += ' cal-hol';
+    else if (isSc) cellCls += ' cal-sched';
+
+    const dayColor = isW ? '#fff' : (isSu||isH) ? '#EF4444' : isSa ? '#3B82F6' : '#334155';
+    const hLabel   = isW ? `<div class="cal-h">${hrs}h</div>` : '';
+    const holStr   = (!isW && isH) ? `<div class="cal-hname" style="color:#EF4444">${HOL[dstr].slice(0,3)}</div>` : '';
+
+    // onclick: 날짜 팝업 열기
+    const oc = `CD('${dstr}',${day},${dow},${isSc?1:0},${isH?1:0},${defH})`;
+    return `<button class="${cellCls}" onclick="${oc}">
+      <div class="cal-day" style="color:${dayColor}">${day}</div>
+      ${hLabel}${holStr}
+    </button>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="rb" style="margin-bottom:12px">
+        <span style="font-size:14px;font-weight:800">${ps.y}년 ${ps.m}월 근무일</span>
+        <div style="font-size:11px;color:#94A3B8;display:flex;gap:6px">
+          <span style="display:flex;align-items:center;gap:3px">
+            <span style="width:10px;height:10px;border-radius:3px;background:#2563EB;display:inline-block"></span>근무
+          </span>
+          <span style="display:flex;align-items:center;gap:3px">
+            <span style="width:10px;height:10px;border-radius:3px;outline:2px solid #BFDBFE;display:inline-block"></span>예정
+          </span>
+        </div>
+      </div>
+      <div class="cal-hd">${hdCells}</div>
+      <div class="cal-grid">${emptyCells}${days}</div>
+      <button class="autofill-btn" onclick="AF()">✨ 예정된 근무일 자동채우기 (기본 ${emp.workHours - emp.breakMinutes/60}h)</button>
+      <button class="reset-btn" onclick="RC()">이번 달 초기화</button>
+    </div>`;
+}
+
+// ── 급여 결과 ──────────────────────────────
+function buildResult(r) {
+  const rows = [
+    ['총 근무일',       `${r.totWrk}일`,                           '#334155'],
+    ['총 실근무시간',    `${r.totH.toFixed(1)}시간`,                '#334155'],
+    ['기본급',          won(r.basic),                              '#334155'],
+    ['주휴수당',        r.holiday>0?'+'+won(r.holiday):'미발생',    r.holiday>0?'#059669':'#94A3B8'],
+    ['소득세 3.3%',    '-'+won(r.tax),                             '#EF4444'],
+  ].map(([l,v,c])=>`
+    <div class="pay-row">
+      <span class="pay-lbl">${l}</span>
+      <span class="pay-val" style="color:${c}">${v}</span>
+    </div>`).join('');
+
+  const wkRows = showWk ? r.dets.map(d=>{
+    const bc = d.ok?'bg-g':d.reason==='결근'?'bg-r':d.reason==='다음달 귀속'?'bg-y':'bg-gr';
+    return `<div class="wk-row">
+      <div class="wk-hd">
+        <span class="wk-lbl">${d.label}</span>
+        <span class="badge ${bc}">${d.ok?'주휴 +'+won(d.wkHol):d.reason}</span>
+      </div>
+      <div class="wk-txt">근무 ${d.wc}/${d.sc}일 &middot; ${d.workedHours.toFixed(1)}h &middot; 기본급 ${won(d.wkBasic)}</div>
+    </div>`;
+  }).join('') : '';
+
+  return `
+    <div class="card">
+      <div style="font-size:14px;font-weight:800;margin-bottom:14px">급여 계산 결과</div>
+      ${rows}
+      <div class="pay-total">
+        <div>
+          <div class="pt-lbl">최종 지급액</div>
+          <div class="pt-sub">세후 실수령액</div>
+        </div>
+        <div class="pt-amt">${won(r.net)}</div>
+      </div>
+      <button class="detail-btn" onclick="TW()">
+        <span>주차별 상세 보기</span>
+        <span style="transition:transform .2s;transform:${showWk?'rotate(180deg)':'none'}">▾</span>
+      </button>
+      ${wkRows}
+    </div>`;
+}
+
+// ── 모달 렌더 ──────────────────────────────
+function buildModal(emp, rec, rk) {
+  if (!modal) return '';
+
+  // ── 직원 추가/수정 모달
+  if (modal.type==='emp') {
+    const f = modal.form;
+    const dBtns = DKO.map((d,i)=>{
+      const k=DKEYS[i]; const on=f.schedule[k];
+      const dc = i===0?'#EF4444':i===6?'#3B82F6':'#94A3B8';
+      return `<button class="day-b ${on?'on':'off'}" style="${!on?`color:${dc}`:''}" onclick="TDS('${k}')">${d}</button>`;
+    }).join('');
+    return `
+      <div class="overlay" onclick="CM()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+          <div class="rb" style="margin-bottom:20px">
+            <span class="modal-ttl">${modal.eid?'직원 수정':'직원 추가'}</span>
+            <button class="modal-close" onclick="CM()">✕</button>
+          </div>
+          <div style="margin-bottom:16px">
+            <label class="lbl">이름</label>
+            <input class="inp" id="fn" placeholder="홍길동" value="${f.name||''}">
+          </div>
+          <div class="g3" style="margin-bottom:16px">
+            <div><label class="lbl" style="font-size:10px">시급 (원)</label><input class="inp" type="number" id="fw" step="10" value="${f.hourlyWage}"></div>
+            <div><label class="lbl" style="font-size:10px">근무 (h)</label><input class="inp" type="number" id="fh" step="0.5" value="${f.workHours}"></div>
+            <div><label class="lbl" style="font-size:10px">휴게 (분)</label><input class="inp" type="number" id="fb" step="10" value="${f.breakMinutes}"></div>
+          </div>
+          <div style="margin-bottom:22px">
+            <label class="lbl">주간 근무 요일</label>
+            <div class="day-btns">${dBtns}</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn-s" style="flex:1;padding:14px" onclick="CM()">취소</button>
+            <button class="btn-p" style="flex:1;padding:14px;font-size:14px" onclick="SE()">저장</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── 날짜 근무시간 입력 모달
+  if (modal.type==='day') {
+    const {dstr,day,dow,isSc,isH,defH} = modal.data;
+    const mName = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'][ps.m-1];
+    const dateLabel = `${ps.y}년 ${mName} ${day}일 (${DKO[dow]})`;
+    const holStr = HOL[dstr] ? ` 🔴 ${HOL[dstr]}` : '';
+    const curH   = (recs[rk]||{})[dstr]||0;
+    const isWrk  = curH>0;
+    const dispH  = isWrk ? curH : defH;
+
+    const subInfo = [];
+    if (isSc) subInfo.push('✅ 예정된 근무일');
+    if (isH)  subInfo.push(`🔴 ${HOL[dstr]}`);
+
+    return `
+      <div class="overlay" onclick="CM()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="padding:28px 24px">
+          <div class="rb" style="margin-bottom:16px">
+            <div>
+              <div class="day-modal-date">${dateLabel}</div>
+              <div class="day-modal-sub">${subInfo.join(' &nbsp;·&nbsp; ')}</div>
+            </div>
+            <button class="modal-close" onclick="CM()">✕</button>
+          </div>
+
+          <label class="lbl">실 근무시간 (시간)</label>
+          <input class="hours-input" type="number" id="dh" step="0.5" min="0" max="24" value="${dispH}">
+          <div class="hours-note">휴게시간을 제외한 실제 근무시간을 입력하세요 (기본 ${defH}h)</div>
+
+          <div style="display:flex;gap:8px;margin-top:20px">
+            ${isWrk?`<button class="btn-d" style="flex:1;padding:13px" onclick="RD('${dstr}')">삭제</button>`:''}
+            <button class="btn-s" style="flex:1;padding:13px" onclick="CM()">취소</button>
+            <button class="btn-p" style="flex:1;padding:13px" onclick="SD('${dstr}')">저장</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  return '';
+}
+
+// ── 전역 액션 함수 ─────────────────────────
+window.ST = t => { tab=t; render(); };
+window.CM = () => { modal=null; render(); };
+window.TW = () => { showWk=!showWk; render(); };
+
+// 직원 관리
+window.OA = () => {
+  modal={ type:'emp', eid:null, form:{name:'',hourlyWage:10030,workHours:8,breakMinutes:30,schedule:{sun:false,mon:false,tue:false,wed:false,thu:false,fri:false,sat:false}} };
+  render();
+};
+window.OE = id => {
+  const e=emps.find(e=>e.id===id); if(!e) return;
+  modal={ type:'emp', eid:id, form:{...e,schedule:{...e.schedule}} };
+  render();
+};
+window.TDS = k => { modal.form.schedule[k]=!modal.form.schedule[k]; render(); };
+window.SE  = () => {
+  const name=document.getElementById('fn')?.value?.trim();
+  if (!name) { alert('이름을 입력해주세요'); return; }
+  const obj={ name, hourlyWage:+document.getElementById('fw').value, workHours:+document.getElementById('fh').value, breakMinutes:+document.getElementById('fb').value, schedule:{...modal.form.schedule} };
+  if (modal.eid) emps=emps.map(e=>e.id===modal.eid?{...obj,id:modal.eid}:e);
+  else emps.push({...obj,id:uid()});
+  save(); modal=null; render();
+};
+window.DE = id => {
+  if (!confirm('정말 삭제할까요?')) return;
+  emps=emps.filter(e=>e.id!==id);
+  if (ps.eid===id) ps.eid='';
+  save(); render();
+};
+
+// 날짜 근무시간
+window.CD = (dstr,day,dow,isSc,isH,defH) => {
+  modal={ type:'day', data:{dstr,day,dow,isSc:!!isSc,isH:!!isH,defH} };
+  render();
+};
+window.SD = dstr => {
+  const h=+(document.getElementById('dh')?.value||0);
+  if (isNaN(h)||h<0) return;
+  const rk=`${ps.eid}_${ps.y}_${ps.m}`;
+  if (!recs[rk]) recs[rk]={};
+  recs[rk][dstr]=h;
+  save(); modal=null; render();
+};
+window.RD = dstr => {
+  const rk=`${ps.eid}_${ps.y}_${ps.m}`;
+  if (recs[rk]) delete recs[rk][dstr];
+  save(); modal=null; render();
+};
+
+// 자동채우기
+window.AF = () => {
+  const emp=emps.find(e=>e.id===ps.eid); if(!emp) return;
+  const rk=`${ps.eid}_${ps.y}_${ps.m}`;
+  if (!recs[rk]) recs[rk]={};
+  const dim  = new Date(ps.y, ps.m, 0).getDate();
+  const defH = emp.workHours - emp.breakMinutes/60;
+  let cnt=0;
+  for (let d=1;d<=dim;d++) {
+    const date=new Date(ps.y,ps.m-1,d);
+    const dstr=ds(date);
+    const k=DKEYS[date.getDay()];
+    if (emp.schedule[k] && !((recs[rk][dstr]||0)>0)) { recs[rk][dstr]=defH; cnt++; }
+  }
+  save(); render();
+  if (cnt>0) alert(`${cnt}일이 자동으로 채워졌습니다. 개별 날짜를 눌러 시간을 수정하세요.`);
+};
+
+// 초기화
+window.RC = () => {
+  if (!confirm('이 달의 근무기록을 모두 초기화할까요?')) return;
+  const rk=`${ps.eid}_${ps.y}_${ps.m}`;
+  recs[rk]={}; save(); render();
+};
+
+// ── 최초 실행 ──────────────────────────────
+render();
+</script>
+</body>
+</html>
