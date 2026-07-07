@@ -142,11 +142,10 @@ const DKO   = ['일','월','화','수','목','금','토'];
 // ── 앱 상태 ────────────────────────────────
 let emps    = JSON.parse(localStorage.getItem('alba_emps')    || '[]');
 let recs    = JSON.parse(localStorage.getItem('alba_recs')    || '{}');
-// 토글 상태 로드 
 let applyTax  = JSON.parse(localStorage.getItem('alba_apply_tax') ?? 'true');
 let bonusMode = localStorage.getItem('alba_bonus_mode') || 'include'; 
 
-let tab     = 'employees';
+let tab     = 'employees'; // 탭 종류: employees, payroll, dashboard
 let ps      = { eid:'', y: new Date().getFullYear(), m: new Date().getMonth()+1 };
 let modal   = null;
 let showWk  = false;
@@ -189,7 +188,7 @@ function getWeeks(y, m) {
   return wks;
 }
 
-// ── 핵심 로직 업데이트: 주휴수당 귀속월 분리 알고리즘 ──
+// ── 핵심 로직 ──────────────────────────────
 function calcPay(emp, recsObj, y, m) {
   const defH  = emp.workHours - emp.breakMinutes/60;
   const schK  = DKEYS.filter(k => emp.schedule[k]);
@@ -202,20 +201,19 @@ function calcPay(emp, recsObj, y, m) {
   wks.forEach((wk, wi) => {
     let wkBasic = 0;
     let wkBonus = 0;
-    let fullWeekBonus = 0; // 주휴수당 계산을 위한 주 전체 보너스
+    let fullWeekBonus = 0; 
     let wkWorkedDays = 0;
     let wkSchedDays = 0;
     let wkHours = 0;
     let allWrkd = true;
     let hasSched = false;
 
-    // 월을 넘나드는 7일 전체를 조회하여 실제 출근 여부 확인
     wk.forEach(d => {
       const dstr = ds(d);
       const dy = d.getFullYear();
       const dm = d.getMonth() + 1;
       const rk = `${emp.id}_${dy}_${dm}`;
-      const rec = recsObj[rk] || {}; // 해당 달의 데이터를 불러옴
+      const rec = recsObj[rk] || {}; 
       const h = getDayHours(rec, dstr);
       const b = getDayBonus(rec, dstr);
       const isSched = emp.schedule[DKEYS[d.getDay()]];
@@ -223,7 +221,7 @@ function calcPay(emp, recsObj, y, m) {
       if (isSched) {
         hasSched = true;
         wkSchedDays++;
-        if (h === 0) allWrkd = false; // 결근 발생
+        if (h === 0) allWrkd = false; 
       }
       if (h > 0) {
         wkWorkedDays++;
@@ -232,7 +230,6 @@ function calcPay(emp, recsObj, y, m) {
       
       fullWeekBonus += b;
 
-      // 당월(선택한 월)에 속하는 기본급과 보너스만 현재 급여에 합산
       if (dy === y && dm === m) {
         if (h > 0) wkBasic += h * emp.hourlyWage;
         wkBonus += b;
@@ -247,12 +244,10 @@ function calcPay(emp, recsObj, y, m) {
     basic += wkBasic;
 
     let wkHol = 0, ok = false, reason = '';
-    
-    // 주의 마지막 날(일요일)을 기준으로 주휴수당이 어느 달에 귀속될지 결정
     const sun = wk[6];
     const sunY = sun.getFullYear();
     const sunM = sun.getMonth() + 1;
-    const belongsToCurrentMonth = (sunY === y && sunM === m); // 일요일이 이번 달인가?
+    const belongsToCurrentMonth = (sunY === y && sunM === m); 
     
     if (wkCon >= 15) {
       if (!hasSched) {
@@ -263,7 +258,6 @@ function calcPay(emp, recsObj, y, m) {
           wkHol += fullWeekBonus * 0.2; 
         }
         
-        // 일요일이 이번 달이면 이번 달 급여에 주휴수당 포함, 아니면 이월
         if (belongsToCurrentMonth) {
           ok = true;
           holiday += wkHol;
@@ -294,7 +288,6 @@ function calcPay(emp, recsObj, y, m) {
     });
   });
 
-  // 총 근무일 및 실근무시간은 당월 데이터만 합산
   let totWrk = 0;
   let totH = 0;
   const currentRk = `${emp.id}_${y}_${m}`;
@@ -317,7 +310,6 @@ function render() {
   const emp = emps.find(e=>e.id===ps.eid);
   const rk  = `${ps.eid}_${ps.y}_${ps.m}`;
   const rec = ps.eid ? (recs[rk]||{}) : {};
-  // rec(당월 데이터) 대신 recs(전체 데이터)를 넘겨서 앞/뒤 달을 조회할 수 있게 수정
   const res = emp ? calcPay(emp, recs, ps.y, ps.m) : null;
 
   document.getElementById('app').innerHTML = buildMain(emp, rec, res);
@@ -337,8 +329,9 @@ function buildMain(emp, rec, res) {
     <div class="tabs">
       <button class="tab ${tab==='employees'?'on':''}" onclick="ST('employees')">👤 직원 관리</button>
       <button class="tab ${tab==='payroll'?'on':''}" onclick="ST('payroll')">💰 급여 계산</button>
+      <button class="tab ${tab==='dashboard'?'on':''}" onclick="ST('dashboard')">📊 월별 총괄</button>
     </div>
-    ${tab==='employees' ? buildEmpTab() : buildPayTab(emp, rec, res)}
+    ${tab==='employees' ? buildEmpTab() : (tab==='payroll' ? buildPayTab(emp, rec, res) : buildDashboardTab())}
     ${buildBackupSection()}
   `;
 }
@@ -347,12 +340,11 @@ function buildMain(emp, rec, res) {
 function buildBackupSection() {
   return `
     <div class="card" style="margin-top:24px; background:#F8FAFC; border:1px dashed #CBD5E1;">
-      <div style="font-size:12px; font-weight:700; color:#64748B; margin-bottom:12px;">📦 데이터 백업 및 다운로드</div>
-      
+      <div style="font-size:12px; font-weight:700; color:#64748B; margin-bottom:12px;">📦 데이터 전체 백업 및 복원</div>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div class="g2">
-          <button class="btn-s" onclick="exportData()" style="padding:10px; font-size:12px;">📄 JSON 백업</button>
-          <button class="btn-ex" onclick="exportExcel()" style="padding:10px; font-size:12px;">📊 엑셀 다운로드</button>
+          <button class="btn-s" onclick="exportData()" style="padding:10px; font-size:12px;">📄 JSON 백업 다운</button>
+          <button class="btn-ex" onclick="exportExcel()" style="padding:10px; font-size:12px;">📊 전체 엑셀 백업</button>
         </div>
         <button class="btn-s" onclick="document.getElementById('importFile').click()" style="width:100%; padding:10px; font-size:12px; color:#2563EB; border-color:#BFDBFE; background:#EFF6FF;">
           🔄 JSON 파일로 데이터 복구하기
@@ -361,6 +353,56 @@ function buildBackupSection() {
       <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none;">
     </div>
   `;
+}
+
+// ── 월별 총괄 대시보드 탭 ────────────────────
+function buildDashboardTab() {
+  const yOpts = [2024,2025,2026].map(y=>`<option value="${y}" ${y===ps.y?'selected':''}>${y}년</option>`).join('');
+  const mOpts = Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===ps.m?'selected':''}>${m}월</option>`).join('');
+  
+  const controls = `
+    <div class="card">
+      <div class="rb" style="margin-bottom:12px">
+        <span style="font-size:14px;font-weight:800">월별 급여 대장</span>
+        <button class="btn-ex" onclick="exportDashboardExcel()" style="padding:6px 12px; font-size:11px;">📊 월간 대장 다운로드</button>
+      </div>
+      <div class="g2">
+        <div><label class="lbl">연도</label><select class="inp" id="sy">${yOpts}</select></div>
+        <div><label class="lbl">월</label><select class="inp" id="sm">${mOpts}</select></div>
+      </div>
+    </div>
+  `;
+
+  let totalAll = 0;
+  const listHtml = emps.map(emp => {
+    const res = calcPay(emp, recs, ps.y, ps.m);
+    if (res.totWrk === 0 && res.totalCashBonus === 0 && res.holiday === 0) return ''; 
+    
+    totalAll += res.finalTotal;
+    return `
+      <div class="pay-row" style="flex-direction:column; align-items:flex-start; gap:6px; padding:12px 0;">
+        <div class="rb" style="width:100%;">
+          <span style="font-weight:800; font-size:14px;">${emp.name}</span>
+          <span style="font-weight:800; color:#2563EB;">${won(res.finalTotal)}</span>
+        </div>
+        <div style="font-size:11px; color:#64748B;">
+          근무 ${res.totWrk}일 (${res.totH}h) &middot; 주휴 ${won(res.holiday)} &middot; 세금 ${won(res.tax)}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const emptyMsg = `<div class="empty" style="padding:20px;"><div class="empty-sub">이 달에 정산될 급여 내역이 없습니다.</div></div>`;
+  const listCard = `
+    <div class="card">
+      <div style="font-size:12px; font-weight:700; color:#64748B; border-bottom:1px solid #F1F5F9; padding-bottom:8px; margin-bottom:8px;">
+        총 인건비 지출 예상액: <span style="color:#EF4444; font-weight:900;">${won(totalAll)}</span>
+      </div>
+      ${listHtml || emptyMsg}
+    </div>
+  `;
+  
+  return controls + listCard;
 }
 
 // ── 직원 탭 ────────────────────────────────
@@ -439,7 +481,7 @@ function buildPayTab(emp, rec, res) {
       <div class="empty-ttl">직원을 먼저 선택해주세요</div>
     </div></div>`;
 
-  return controls + buildCalendar(emp, rec) + (res ? buildResult(res) : '');
+  return controls + buildCalendar(emp, rec) + (res ? buildResult(res, emp) : '');
 }
 
 // ── 캘린더 ─────────────────────────────────
@@ -505,7 +547,7 @@ function buildCalendar(emp, rec) {
 }
 
 // ── 급여 결과 ──────────────────────────────
-function buildResult(r) {
+function buildResult(r, emp) {
   const rows = [
     ['총 근무일',       `${r.totWrk}일`,                           '#334155'],
     ['총 실근무시간',    `${r.totH.toFixed(1)}시간`,                '#334155'],
@@ -525,7 +567,6 @@ function buildResult(r) {
     </div>`).join('');
 
   const wkRows = showWk ? r.dets.map(d=>{
-    // 다음달/이전달 귀속인 경우 노란색 배지로 표시
     const bc = d.ok?'bg-g':d.reason==='결근'?'bg-r':d.reason.includes('귀속')?'bg-y':'bg-gr';
     return `<div class="wk-row">
       <div class="wk-hd">
@@ -552,7 +593,10 @@ function buildResult(r) {
         <span style="transition:transform .2s;transform:${showWk?'rotate(180deg)':'none'}">▾</span>
       </button>
       ${wkRows}
-    </div>`;
+    </div>
+    <button class="btn-s" onclick="exportSingleExcel()" style="width:100%; padding:14px; margin-top:8px; color:#2563EB; border-color:#BFDBFE;">
+      📉 ${emp.name}님의 ${ps.m}월 급여명세서 엑셀 다운로드
+    </button>`;
 }
 
 // ── 모달 렌더 ──────────────────────────────
@@ -647,7 +691,6 @@ window.ST = t => { tab=t; render(); };
 window.CM = () => { modal=null; render(); };
 window.TW = () => { showWk=!showWk; render(); };
 
-// 계산 옵션 제어 함수
 window.toggleTax = checked => {
   applyTax = checked;
   save();
@@ -660,11 +703,60 @@ window.changeBonusMode = value => {
 };
 
 // ── 엑셀 추출 엔진 (SheetJS 연동) ────────────────
+window.exportSingleExcel = () => {
+  if (typeof XLSX === 'undefined') return alert('엑셀 라이브러리 로딩 중입니다.');
+  if (!ps.eid) return;
+
+  const emp = emps.find(e => e.id === ps.eid);
+  const rk = `${ps.eid}_${ps.y}_${ps.m}`;
+  const rec = recs[rk] || {};
+  
+  const recSheetData = [];
+  Object.keys(rec).forEach(dstr => {
+    const h = getDayHours(rec, dstr);
+    const b = getDayBonus(rec, dstr);
+    if (h > 0 || b > 0) recSheetData.push({ '근무 일자': dstr, '실근무시간(h)': h, '추가수당(원)': b });
+  });
+  
+  if(recSheetData.length === 0) return alert('해당 월에 근무 기록이 없습니다.');
+  recSheetData.sort((a,b) => a['근무 일자'].localeCompare(b['근무 일자']));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(recSheetData);
+  XLSX.utils.book_append_sheet(wb, ws, `${ps.m}월 명세서`);
+  XLSX.writeFile(wb, `${emp.name}_${ps.y}년${ps.m}월_급여명세.xlsx`);
+};
+
+window.exportDashboardExcel = () => {
+  if (typeof XLSX === 'undefined') return alert('엑셀 라이브러리 로딩 중입니다.');
+  
+  const sheetData = [];
+  emps.forEach(emp => {
+    const res = calcPay(emp, recs, ps.y, ps.m);
+    if (res.totWrk > 0 || res.totalCashBonus > 0 || res.holiday > 0) {
+      sheetData.push({
+        '직원명': emp.name,
+        '총 근무일': res.totWrk,
+        '총 실근무시간': res.totH,
+        '당월 기본급': res.basic,
+        '주휴수당': res.holiday,
+        '소득세(3.3%) 공제': applyTax ? res.tax : 0,
+        '현금 별도지급 수당': res.totalCashBonus,
+        '최종 실수령액': res.finalTotal
+      });
+    }
+  });
+  
+  if(sheetData.length === 0) return alert('해당 월에 내보낼 급여 내역이 없습니다.');
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(wb, ws, `${ps.m}월 급여대장`);
+  XLSX.writeFile(wb, `${ps.y}년_${ps.m}월_전체급여대장.xlsx`);
+};
+
 window.exportExcel = () => {
-  if (typeof XLSX === 'undefined') {
-    alert('엑셀 변환 라이브러리를 불러오고 있습니다. 잠시 후 다시 시도해주세요.');
-    return;
-  }
+  if (typeof XLSX === 'undefined') return alert('엑셀 변환 라이브러리를 불러오고 있습니다.');
 
   const empSheetData = emps.map(e => ({
     '직원명': e.name,
@@ -703,7 +795,7 @@ window.exportExcel = () => {
   const wsRecs = XLSX.utils.json_to_sheet(recSheetData);
   XLSX.utils.book_append_sheet(wb, wsRecs, "근무 및 수당 기록");
 
-  const fileName = `alba_payroll_data_${new Date().toISOString().slice(0,10)}.xlsx`;
+  const fileName = `alba_payroll_ALL_data_${new Date().toISOString().slice(0,10)}.xlsx`;
   XLSX.writeFile(wb, fileName);
 };
 
@@ -733,7 +825,7 @@ window.importData = event => {
         if (data.bonusMode !== undefined) bonusMode = data.bonusMode;
         save();
         render();
-        alert('데이터가 안전하게 백업 파일로부터 복구되었습니다!');
+        alert('데이터가 안전하게 복구되었습니다!');
       } else {
         alert('올바른 백업 파일 형식이 아닙니다.');
       }
@@ -796,7 +888,6 @@ window.RD = dstr => {
   save(); modal=null; render();
 };
 
-// 자동채우기
 window.AF = () => {
   const emp=emps.find(e=>e.id===ps.eid); if(!emp) return;
   const rk=`${ps.eid}_${ps.y}_${ps.m}`;
@@ -817,7 +908,6 @@ window.AF = () => {
   if (cnt>0) alert(`${cnt}일이 자동으로 채워졌습니다. 개별 날짜를 눌러 시간을 수정하세요.`);
 };
 
-// 초기화
 window.RC = () => {
   if (!confirm('이 달의 근무기록을 모두 초기화할까요?')) return;
   const rk=`${ps.eid}_${ps.y}_${ps.m}`;
